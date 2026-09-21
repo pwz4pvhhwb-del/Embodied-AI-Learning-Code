@@ -2,7 +2,7 @@
 # 作者：宇哥的具身笔记
 
 
-同时展示 front/wrist 相机、六维关节状态和六维关节动作。数据一次加载
+同时展示 front/wrist 相机、六维关节状态和八维动作通道。数据一次加载
 完成后，可以在 Rerun 时间轴中拖动、播放或逐帧检查。
 """
 
@@ -39,7 +39,11 @@ def as_image(value) -> np.ndarray:
 def main() -> None:
     parser = argparse.ArgumentParser(description="用 Rerun 查看本地 LeRobot 数据")
     parser.add_argument("dataset", type=Path, help="LeRobot 数据集根目录")
-    parser.add_argument("--repo-id", default="local/pick_orange", help="用于初始化 LeRobotDataset 的标识")
+    parser.add_argument(
+        "--repo-id",
+        default="local/pick_orange",
+        help="用于初始化 LeRobotDataset 的标识",
+    )
     parser.add_argument("--episode", type=int, default=0, help="要加载的 episode 编号")
     parser.add_argument("--save", type=Path, help="保存为 .rrd；省略时打开 Rerun 窗口")
     args = parser.parse_args()
@@ -55,7 +59,11 @@ def main() -> None:
 
     names = dataset.meta.features["observation.state"]["names"]
     episode_indices = dataset.hf_dataset["episode_index"]
-    selected = [index for index, episode in enumerate(episode_indices) if int(episode) == args.episode]
+    selected = [
+        index
+        for index, episode in enumerate(episode_indices)
+        if int(episode) == args.episode
+    ]
     print(f"加载 episode={args.episode}: {len(selected)} frames, {dataset.meta.fps} FPS")
 
     for local_frame, global_index in enumerate(selected):
@@ -64,14 +72,18 @@ def main() -> None:
         rr.set_time("time", duration=local_frame / dataset.meta.fps)
 
         for camera_key in dataset.meta.camera_keys:
-            rr.log(camera_key.replace("observation.images.", "camera/"), rr.Image(as_image(sample[camera_key])))
+            rr.log(
+                camera_key.replace("observation.images.", "camera/"),
+                rr.Image(as_image(sample[camera_key])),
+            )
 
         state = as_numpy(sample["observation.state"]).reshape(-1)
         action = as_numpy(sample["action"]).reshape(-1)
-        for joint_name, state_value, action_value in zip(names, state, action, strict=True):
+        for joint_name, state_value in zip(names, state, strict=True):
             joint = joint_name.removesuffix(".pos")
             rr.log(f"joints/{joint}/state", rr.Scalars(float(state_value)))
-            rr.log(f"joints/{joint}/action", rr.Scalars(float(action_value)))
+        for index, action_value in enumerate(action):
+            rr.log(f"action/dim_{index}", rr.Scalars(float(action_value)))
 
     print("数据已加载到 Rerun，可使用时间轴播放或逐帧查看。")
 

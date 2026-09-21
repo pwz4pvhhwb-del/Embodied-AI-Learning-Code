@@ -8,7 +8,6 @@ import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
-
 COURSE_TASK = "LeIsaac-SO101-LiftCube-v0"
 STATE_MACHINE_TASK = "LeIsaac-SO101-PickOrange-v0"
 TELEOP_DEVICES = ("keyboard", "gamepad", "so101leader")
@@ -129,7 +128,6 @@ class LeIsaacCommandBuilder:
         lerobot_fps: int = 30,
         camera_width: int = 640,
         camera_height: int = 480,
-        orange_index: int | None = 1,
     ) -> list[str]:
         """构造上游状态机合成命令。
 
@@ -151,9 +149,6 @@ class LeIsaacCommandBuilder:
             raise ValueError("LeRobot repo_id应采用namespace/name形式")
         if lerobot_fps < 1 or camera_width < 1 or camera_height < 1:
             raise ValueError("LeRobot fps和相机尺寸必须为正整数")
-        if orange_index not in {None, 1, 2, 3}:
-            raise ValueError("orange_index只能是1、2、3或None")
-
         command = [
             self.python,
             self._script("scripts/datagen/state_machine/generate.py"),
@@ -174,8 +169,6 @@ class LeIsaacCommandBuilder:
             command.append("--headless")
         if quality:
             command.append("--quality")
-        if orange_index is not None:
-            command.append(f"--orange_index={orange_index}")
         if lerobot_repo_id is not None:
             command.extend(
                 [

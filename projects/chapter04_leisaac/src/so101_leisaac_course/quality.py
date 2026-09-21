@@ -126,7 +126,9 @@ def validate_frames(
         previous_by_episode[episode] = frame
 
         if int(frame.get("index", row_number)) != row_number:
-            issues.append(QualityIssue("warning", "全局index与文件行号不一致", episode, frame_index))
+            issues.append(
+                QualityIssue("warning", "全局index与文件行号不一致", episode, frame_index)
+            )
 
     if len(frames) != info.total_frames:
         issues.append(

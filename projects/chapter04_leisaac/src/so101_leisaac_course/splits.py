@@ -34,7 +34,7 @@ def split_episode_ids(
         raise ValueError("train_ratio + validation_ratio必须小于1")
     rng = np.random.default_rng(seed)
     rng.shuffle(unique)
-    train_end = max(1, int(len(unique) * train_ratio))
+    train_end = min(max(1, int(len(unique) * train_ratio)), len(unique) - 2)
     validation_end = max(train_end + 1, int(len(unique) * (train_ratio + validation_ratio)))
     validation_end = min(validation_end, len(unique) - 1)
     return EpisodeSplit(

@@ -5,13 +5,15 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
-from importlib import metadata
-from pathlib import Path
 import platform
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
+from importlib import metadata
+from pathlib import Path
+
+from packaging.version import InvalidVersion, Version
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,52 @@ def package_version(distribution: str) -> str | None:
         return metadata.version(distribution)
     except metadata.PackageNotFoundError:
         return None
+
+
+def versions_equivalent(installed: str, expected: str) -> bool:
+    """按 PEP 440 比较公开版本，忽略本地构建后缀并接受等价的尾随零。"""
+    try:
+        installed_version = Version(installed)
+        expected_version = Version(expected)
+    except InvalidVersion:
+        return False
+    return Version(installed_version.public) == expected_version
+
+
+def check_isaaclab_version(leisaac_root: Path) -> CheckResult:
+    """以 LeIsaac 固定的 Isaac Lab 源码 tag 判断发布版本。"""
+    expected = LEISAAC_PROFILE["isaaclab"]
+    installed = package_version("isaaclab")
+    if installed is None:
+        return CheckResult("isaaclab", False, "Python 包未安装")
+
+    source_root = leisaac_root.expanduser().resolve() / "dependencies" / "IsaacLab"
+    if not source_root.is_dir():
+        return CheckResult("isaaclab", False, f"未找到源码目录：{source_root}")
+
+    git = shutil.which("git")
+    if git is None:
+        return CheckResult("isaaclab", False, "未找到 git，无法核对 Isaac Lab 源码 tag")
+
+    try:
+        exact = subprocess.run(
+            [git, "-C", str(source_root), "describe", "--tags", "--exact-match", "HEAD"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=8,
+        )
+    except (subprocess.SubprocessError, OSError) as error:
+        return CheckResult("isaaclab", False, f"无法读取源码 tag：{error}")
+
+    tag = exact.stdout.strip()
+    normalized_tag = tag.removeprefix("v")
+    ok = exact.returncode == 0 and versions_equivalent(normalized_tag, expected)
+    if exact.returncode != 0:
+        detail = f"源码 HEAD 未精确匹配 v{expected}；Python 包 metadata {installed}"
+    else:
+        detail = f"{tag}（源码 Git tag；Python 包 metadata {installed}；课程版本 {expected}）"
+    return CheckResult("isaaclab", ok, detail)
 
 
 def check_nvidia_smi() -> CheckResult:
@@ -106,11 +154,14 @@ def run_checks(leisaac_root: Path) -> list[CheckResult]:
         check_torch_cuda(),
     ]
     for distribution in ("numpy", "torch", "isaacsim", "isaaclab", "lerobot", "leisaac"):
+        if distribution == "isaaclab":
+            results.append(check_isaaclab_version(leisaac_root))
+            continue
         installed = package_version(distribution)
         expected = LEISAAC_PROFILE.get(distribution)
-        # CUDA wheel 可能显示为 2.7.0+cu128；本地版本后缀不改变课程锁定的基础版本。
-        base_version = installed.split("+", 1)[0] if installed is not None else None
-        version_ok = installed is not None and (expected is None or base_version == expected)
+        version_ok = installed is not None and (
+            expected is None or versions_equivalent(installed, expected)
+        )
         detail = installed or "未安装"
         if expected is not None:
             detail += f"（课程版本 {expected}）"

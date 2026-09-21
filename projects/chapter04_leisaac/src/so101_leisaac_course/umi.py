@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +22,9 @@ class WorkspaceBounds:
     maximum_xyz: tuple[float, float, float] = (0.42, 0.30, 0.42)
     max_linear_speed_m_s: float = 0.50
     max_angular_speed_rad_s: float = 3.00
+
+
+_DEFAULT_WORKSPACE_BOUNDS = WorkspaceBounds()
 
 
 @dataclass(frozen=True)
@@ -84,7 +87,7 @@ def relative_actions(episode: UmiEpisode, reference: str = "previous") -> np.nda
 
 
 def filter_for_workspace(
-    episode: UmiEpisode, bounds: WorkspaceBounds = WorkspaceBounds()
+    episode: UmiEpisode, bounds: WorkspaceBounds = _DEFAULT_WORKSPACE_BOUNDS
 ) -> list[str]:
     """执行部署前的初筛，返回不可接受原因；通过不等于SO101一定可达。"""
     reasons: list[str] = []
@@ -115,7 +118,7 @@ def to_leisaac_adapter_frames(episode: UmiEpisode) -> list[dict[str, Any]]:
     actions = relative_actions(episode, reference="previous")
     frames = []
     for index, (timestamp, pose, gripper, action) in enumerate(
-        zip(episode.timestamps, episode.poses, episode.gripper_width_m, actions)
+        zip(episode.timestamps, episode.poses, episode.gripper_width_m, actions, strict=True)
     ):
         frames.append(
             {

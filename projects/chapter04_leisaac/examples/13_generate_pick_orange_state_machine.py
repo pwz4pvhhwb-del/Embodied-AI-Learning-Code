@@ -34,9 +34,18 @@ def main() -> None:
         help="直接录制LeRobot Dataset，例如local/pick_orange；省略则录制HDF5",
     )
     parser.add_argument("--lerobot-fps", type=int, default=30)
-    parser.add_argument("--camera-width", type=int, default=640, help="相机宽度；默认与参考数据集一致")
-    parser.add_argument("--camera-height", type=int, default=480, help="相机高度；默认与参考数据集一致")
-    parser.add_argument("--orange-index", type=int, choices=(1, 2, 3), default=1, help="单集抓取的橘子编号")
+    parser.add_argument(
+        "--camera-width",
+        type=int,
+        default=640,
+        help="相机宽度；默认与参考数据集一致",
+    )
+    parser.add_argument(
+        "--camera-height",
+        type=int,
+        default=480,
+        help="相机高度；默认与参考数据集一致",
+    )
     args = parser.parse_args()
 
     command = LeIsaacCommandBuilder(args.leisaac_root).state_machine_generate(
@@ -52,7 +61,6 @@ def main() -> None:
         lerobot_fps=args.lerobot_fps,
         camera_width=args.camera_width,
         camera_height=args.camera_height,
-        orange_index=args.orange_index,
     )
     print(render_command(command))
     if args.lerobot_repo_id:

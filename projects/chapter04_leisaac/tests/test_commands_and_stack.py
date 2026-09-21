@@ -1,7 +1,6 @@
 from pathlib import Path
+
 # 作者：宇哥的具身笔记
-
-
 from so101_leisaac_course.commands import LeIsaacCommandBuilder, render_command
 from so101_leisaac_course.leisaac_stack import format_stack
 from so101_leisaac_course.splits import split_episode_ids
@@ -43,6 +42,7 @@ def test_commands_follow_leisaac_official_scripts(tmp_path):
     assert "--num_demos=12" in generated
     assert "--seed=7" in generated
     assert "--headless" in generated
+    assert not any(argument.startswith("--orange_index") for argument in generated)
     lerobot_generated = builder.state_machine_generate(
         num_demos=1,
         lerobot_repo_id="local/pick_orange_one",

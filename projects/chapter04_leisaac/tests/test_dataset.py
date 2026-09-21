@@ -1,7 +1,6 @@
 import json
+
 # 作者：宇哥的具身笔记
-
-
 import pytest
 
 from so101_leisaac_course.dataset import summarize_dataset

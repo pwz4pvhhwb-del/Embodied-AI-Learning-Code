@@ -4,6 +4,5 @@
 
 from so101_leisaac_course.leisaac_stack import format_stack
 
-
 if __name__ == "__main__":
     print(format_stack())

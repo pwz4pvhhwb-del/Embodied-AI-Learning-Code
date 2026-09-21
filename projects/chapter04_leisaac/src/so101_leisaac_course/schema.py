@@ -4,8 +4,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +23,7 @@ class FeatureSpec:
     names: tuple[str, ...] = ()
 
     @classmethod
-    def from_dict(cls, name: str, value: dict[str, Any]) -> "FeatureSpec":
+    def from_dict(cls, name: str, value: dict[str, Any]) -> FeatureSpec:
         """从info.json字段创建对象并给出易懂的错误信息。"""
         if "dtype" not in value or "shape" not in value:
             raise SchemaError(f"feature {name!r} 必须包含dtype和shape")
@@ -48,7 +48,7 @@ class DatasetInfo:
     raw: dict[str, Any]
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "DatasetInfo":
+    def from_dict(cls, value: dict[str, Any]) -> DatasetInfo:
         """校验数据规模、采样频率与features schema。"""
         required = (
             "codebase_version",
